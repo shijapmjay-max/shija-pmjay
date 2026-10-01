@@ -69,6 +69,10 @@
 		.metric:nth-child(3) .metric-dot { background: #87928c; }
 		.metric-value { display: block; margin-top: 7px; font: 400 25px/1 Georgia, serif; }
 		.metric-value small { color: var(--muted); font: 12px/1 "Aptos", "Segoe UI", sans-serif; }
+		.metric-action { width: 100%; border: 0; color: var(--ink); cursor: pointer; text-align: left; }
+		.metric-action:hover { background: #f8faf7; }
+		.metric-action .metric-value { display: flex; align-items: center; gap: 8px; font: 650 13px/1.3 "Aptos", "Segoe UI", sans-serif; }
+		.metric-action .metric-value svg { width: 17px; height: 17px; color: var(--green); }
 		.roster { margin-top: 28px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); box-shadow: var(--shadow); }
 		.roster-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 20px 15px; }
 		h2 { margin: 0; font: 400 21px/1.2 Georgia, "Times New Roman", serif; }
@@ -97,6 +101,7 @@
 		.patient-id { margin-top: 2px; color: var(--muted); font-size: 11px; }
 		.time { font-variant-numeric: tabular-nums; font-weight: 600; }
 		.shift-label { color: #53645b; font-size: 12px; }
+		.remark-input { width: min(360px, 34vw); min-width: 210px; min-height: 40px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 4px; background: white; color: var(--ink); font-size: 12px; resize: vertical; }
 		.chair { color: #53645b; }
 		.status { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 4px; font-size: 11px; font-weight: 650; }
 		.status::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ""; }
@@ -126,6 +131,7 @@
 		.field.full { grid-column: 1 / -1; }
 		.field label { color: #52635a; font-size: 11px; font-weight: 700; }
 		.field input, .field select { width: 100%; height: 39px; padding: 0 10px; border: 1px solid var(--line); border-radius: 5px; background: white; color: var(--ink); outline-color: #78a38c; }
+		.field textarea { width: 100%; min-height: 88px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 5px; background: white; color: var(--ink); font: inherit; resize: vertical; outline-color: #78a38c; }
 		.form-actions { grid-column: 1 / -1; display: flex; justify-content: end; gap: 8px; margin-top: 5px; }
 		.toast { position: fixed; right: 24px; bottom: 24px; max-width: min(340px, calc(100vw - 48px)); padding: 11px 15px; border-radius: 5px; background: var(--ink); color: white; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transform: translateY(7px); transition: .18s ease; }
 		.toast.show { opacity: 1; transform: translateY(0); }
@@ -148,7 +154,7 @@
 			.search-wrap { flex: 1; min-width: 0; }
 			.search-wrap input { width: 100%; min-width: 0; }
 			.shift-tabs { padding: 0 15px 12px; }
-			table { min-width: 690px; }
+			table { min-width: 890px; }
 			th:first-child, td:first-child { padding-left: 15px; }
 			th:last-child, td:last-child { padding-right: 15px; }
 			.roster-foot { align-items: start; flex-direction: column; padding: 12px 15px; }
@@ -163,15 +169,15 @@
 		<div class="brand">
 			<img class="brand-logo" src="shija-logo.png" alt="Shija Hospitals &amp; Research Institute Pvt. Ltd.">
 		</div>
-		<div class="topbar-meta"><span class="live-dot" aria-hidden="true"></span><span>Daily roster</span><span>Local view</span></div>
+		<div class="topbar-meta"><span class="live-dot" aria-hidden="true"></span><span>Daily roster</span><button class="button" id="logout-button" type="button">Log out</button></div>
 	</header>
 
 	<main>
 		<section class="page-heading" aria-labelledby="page-title">
 			<div>
 				<p class="eyebrow">Clinic operations</p>
-				<h1 id="page-title">Daily treatment list</h1>
-				<p class="subtitle">A clear view of today's schedule and chair assignments.</p>
+				<h1 id="page-title">Total Patient Record</h1>
+				<p class="subtitle">Review patient records and daily dialysis sessions.</p>
 			</div>
 			<div class="heading-actions">
 				<input class="date-control" id="list-date" type="date" aria-label="Roster date">
@@ -184,17 +190,16 @@
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v4h14v-4"/></svg>
 					Export CSV
 				</button>
-				<button class="button button-primary" id="add-button" type="button">
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-					Add patient
-				</button>
 			</div>
 		</section>
 
 		<section class="metrics" aria-label="Roster summary">
-			<div class="metric"><div class="metric-top">Scheduled <span class="metric-dot"></span></div><strong class="metric-value" id="total-count">0 <small>patients</small></strong></div>
-			<div class="metric"><div class="metric-top">Expected <span class="metric-dot"></span></div><strong class="metric-value" id="expected-count">0 <small>remaining</small></strong></div>
-			<div class="metric"><div class="metric-top">Completed <span class="metric-dot"></span></div><strong class="metric-value" id="completed-count">0 <small>sessions</small></strong></div>
+			<div class="metric"><div class="metric-top">Total Patient Record <span class="metric-dot"></span></div><strong class="metric-value" id="total-count">0 <small>patients</small></strong></div>
+			<button class="metric metric-action" id="add-button" type="button" aria-label="Add new patient">
+				<span class="metric-top">Add New Patient <span class="metric-dot"></span></span>
+				<strong class="metric-value"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Open patient form</strong>
+			</button>
+			<div class="metric"><div class="metric-top">Daily Dialysis Record <span class="metric-dot"></span></div><strong class="metric-value" id="completed-count">0 <small>sessions</small></strong></div>
 		</section>
 
 		<section class="roster" aria-labelledby="roster-title">
@@ -205,7 +210,6 @@
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
 						<input id="search-input" type="search" placeholder="Search name or ID" aria-label="Search patients by name or ID">
 					</label>
-					<label class="select-wrap"><select id="status-filter" aria-label="Filter by status"><option value="all">All status</option><option value="Scheduled">Scheduled</option><option value="Arrived">Arrived</option><option value="In chair">In chair</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></select></label>
 				</div>
 			</div>
 			<div class="shift-tabs" role="group" aria-label="Filter by shift">
@@ -217,7 +221,7 @@
 			</div>
 			<div class="table-scroll">
 				<table>
-					<thead><tr><th scope="col">Patient</th><th scope="col">Time</th><th scope="col">Shift</th><th scope="col">Chair</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+					<thead><tr><th scope="col">Patient</th><th scope="col">Time</th><th scope="col">Shift</th><th scope="col">Remark</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
 					<tbody id="roster-body"></tbody>
 				</table>
 			</div>
@@ -244,6 +248,7 @@
 				<div class="field"><label for="patient-id">Patient ID</label><input id="patient-id" name="patientId" required maxlength="24" autocomplete="off"></div>
 				<div class="field"><label for="patient-time">Appointment time</label><select id="patient-time" name="time"><option value="07:00">7am</option><option value="12:00">12pm</option><option value="17:00">5pm</option><option value="21:00">9pm</option><option value="00:00">12am</option><option value="02:00">2am</option></select></div>
 				<div class="field"><label for="patient-shift">Shift</label><select id="patient-shift" name="shift"><option value="Morning">Morning</option><option value="Afternoon">Afternoon</option><option value="Evening">Evening</option><option value="Night">Night</option></select></div>
+				<div class="field full"><label for="patient-remark">Remark</label><textarea id="patient-remark" name="remark" placeholder="Write any notes for this patient"></textarea></div>
 				<div class="form-actions"><button class="button" type="button" id="cancel-dialog">Cancel</button><button class="button button-primary" type="submit">Add to list</button></div>
 			</div>
 		</form>
@@ -260,7 +265,6 @@
 			const dialog = document.querySelector('#patient-dialog');
 			const form = document.querySelector('#patient-form');
 			const searchInput = document.querySelector('#search-input');
-			const statusFilter = document.querySelector('#status-filter');
 			const storageKey = 'shija-daily-roster-v1';
 			const statuses = ['Scheduled', 'Arrived', 'In chair', 'Completed', 'Cancelled'];
 			let activeShift = 'all';
@@ -363,7 +367,8 @@
 						time: findColumn(['time', 'appointmenttime', 'sessiontime', 'starttime']),
 						chair: findColumn(['chair', 'chairno', 'station', 'stationno', 'machine']),
 						shift: findColumn(['shift', 'period']),
-						status: findColumn(['status', 'sessionstatus'])
+						status: findColumn(['status', 'sessionstatus']),
+						remark: findColumn(['remark', 'remarks', 'note', 'notes', 'comment', 'comments'])
 					};
 					if (!columns.name || !columns.patientId || !columns.time || !columns.chair) {
 						throw new Error('Required columns: Patient Name, Patient ID, Time, Chair.');
@@ -391,7 +396,8 @@
 						const shift = normalizeShift(shiftValue, time);
 						const statusValue = columns.status ? String(row[columns.status]).trim().toLowerCase() : '';
 						const status = statuses.find(item => item.toLowerCase() === statusValue) || 'Scheduled';
-						additions.push({ id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`, name, patientId, time, shift, chair, status });
+						const remark = columns.remark ? String(row[columns.remark]).trim() : '';
+						additions.push({ id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`, name, patientId, time, shift, chair, status, remark });
 					});
 					if (!additions.length) {
 						showToast(`No new rows imported. ${skipped} row(s) skipped.`);
@@ -413,28 +419,24 @@
 					const query = searchInput.value.trim().toLowerCase();
 					const matchesQuery = !query || `${patient.name} ${patient.patientId}`.toLowerCase().includes(query);
 					const matchesTime = timeFilterInput.value === 'all' || patient.time === timeFilterInput.value;
-					return matchesQuery && matchesTime && (activeShift === 'all' || patient.shift === activeShift) && (statusFilter.value === 'all' || patient.status === statusFilter.value);
+					return matchesQuery && matchesTime && (activeShift === 'all' || patient.shift === activeShift);
 				}).sort((first, second) => first.time.localeCompare(second.time));
-				const arriving = roster.filter(patient => ['Scheduled', 'Arrived'].includes(patient.status)).length;
 				document.querySelector('#total-count').innerHTML = `${roster.length} <small>patients</small>`;
-				document.querySelector('#expected-count').innerHTML = `${arriving} <small>remaining</small>`;
 				document.querySelector('#completed-count').innerHTML = `${roster.filter(patient => patient.status === 'Completed').length} <small>sessions</small>`;
 				document.querySelector('#visible-count').textContent = `${visible.length} shown`;
 				document.querySelector('#roster-foot-count').textContent = `${visible.length} of ${roster.length} patients`;
 
 				if (!visible.length) {
-					const hasFilter = searchInput.value || timeFilterInput.value !== 'all' || activeShift !== 'all' || statusFilter.value !== 'all';
-					rosterBody.innerHTML = `<tr><td colspan="6"><div class="empty"><strong>${hasFilter ? 'No matching patients' : 'No patients on this date'}</strong>${hasFilter ? 'Try changing the search or filters.' : 'Add a patient to start this daily list.'}</div></td></tr>`;
+					const hasFilter = searchInput.value || timeFilterInput.value !== 'all' || activeShift !== 'all';
+					rosterBody.innerHTML = `<tr><td colspan="5"><div class="empty"><strong>${hasFilter ? 'No matching patients' : 'No patients on this date'}</strong>${hasFilter ? 'Try changing the search or filters.' : 'Add a patient to start this daily list.'}</div></td></tr>`;
 					return;
 				}
 				rosterBody.innerHTML = visible.map(patient => {
-					const statusClass = patient.status.toLowerCase().replaceAll(' ', '-');
-					const nextStatus = statuses[(statuses.indexOf(patient.status) + 1) % statuses.length];
 					return `<tr>
 						<td><div class="patient"><span class="avatar" aria-hidden="true">${escapeHtml(initials(patient.name))}</span><div><div class="patient-name">${escapeHtml(patient.name)}</div><div class="patient-id">ID ${escapeHtml(patient.patientId)}</div></div></div></td>
-						<td class="time">${escapeHtml(patient.time)}</td><td class="shift-label">${escapeHtml(patient.shift)}</td><td class="chair">${escapeHtml(patient.chair)}</td>
-						<td><span class="status status-${statusClass}">${escapeHtml(patient.status)}</span></td>
-						<td><div class="row-actions"><button class="icon-button advance-button" data-id="${escapeHtml(patient.id)}" type="button" title="Change status to ${escapeHtml(nextStatus)}" aria-label="Change ${escapeHtml(patient.name)} status to ${escapeHtml(nextStatus)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"/></svg></button><button class="icon-button remove-button" data-id="${escapeHtml(patient.id)}" type="button" title="Remove from list" aria-label="Remove ${escapeHtml(patient.name)} from list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg></button></div></td>
+						<td class="time">${escapeHtml(patient.time)}</td><td class="shift-label">${escapeHtml(patient.shift)}</td>
+						<td><textarea class="remark-input" data-id="${escapeHtml(patient.id)}" aria-label="Remark for ${escapeHtml(patient.name)}" placeholder="Write a remark">${escapeHtml(patient.remark || '')}</textarea></td>
+						<td><div class="row-actions"><button class="icon-button remove-button" data-id="${escapeHtml(patient.id)}" type="button" title="Remove from list" aria-label="Remove ${escapeHtml(patient.name)} from list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg></button></div></td>
 					</tr>`;
 				}).join('');
 			}
@@ -445,15 +447,6 @@
 				clearTimeout(toastTimer);
 				toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
 			}
-			function setStatus(id) {
-				const patient = getRoster().find(item => item.id === id);
-				if (!patient) return;
-				patient.status = statuses[(statuses.indexOf(patient.status) + 1) % statuses.length];
-				saveData();
-				render();
-				showToast(`${patient.name}: ${patient.status}`);
-			}
-
 			dateInput.value = localToday;
 			document.querySelectorAll('.shift-tab').forEach(button => button.addEventListener('click', () => {
 				activeShift = button.dataset.shift;
@@ -472,10 +465,19 @@
 			document.querySelector('#upload-button').addEventListener('click', () => excelInput.click());
 			excelInput.addEventListener('change', event => importExcelFile(event.target.files[0]));
 			searchInput.addEventListener('input', render);
-			statusFilter.addEventListener('change', render);
+			document.querySelector('#logout-button').addEventListener('click', async () => {
+				await fetch('/api/logout', { method: 'POST' });
+				window.location.assign('/login');
+			});
+			rosterBody.addEventListener('change', event => {
+				const remarkInput = event.target.closest('.remark-input');
+				if (!remarkInput) return;
+				const patient = getRoster().find(item => item.id === remarkInput.dataset.id);
+				if (!patient) return;
+				patient.remark = remarkInput.value;
+				saveData();
+			});
 			rosterBody.addEventListener('click', event => {
-				const advanceButton = event.target.closest('.advance-button');
-				if (advanceButton) setStatus(advanceButton.dataset.id);
 				const removeButton = event.target.closest('.remove-button');
 				if (removeButton) {
 					const roster = getRoster();
@@ -506,7 +508,8 @@
 					id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
 					name: String(values.get('name')).trim(), patientId,
 					chair: 'Unassigned', time: String(values.get('time')),
-					shift: normalizeShift(values.get('shift'), values.get('time')), status: 'Scheduled'
+					shift: normalizeShift(values.get('shift'), values.get('time')), status: 'Scheduled',
+					remark: String(values.get('remark') || '').trim()
 				}];
 				saveData();
 				form.reset();
@@ -515,8 +518,8 @@
 				showToast('Patient added to the daily list.');
 			});
 			document.querySelector('#export-button').addEventListener('click', () => {
-				const headers = ['Patient', 'Patient ID', 'Time', 'Shift', 'Chair', 'Status'];
-				const rows = getRoster().slice().sort((first, second) => first.time.localeCompare(second.time)).map(patient => [patient.name, patient.patientId, patient.time, patient.shift, patient.chair, patient.status]);
+				const headers = ['Patient', 'Patient ID', 'Time', 'Shift', 'Chair', 'Status', 'Remark'];
+				const rows = getRoster().slice().sort((first, second) => first.time.localeCompare(second.time)).map(patient => [patient.name, patient.patientId, patient.time, patient.shift, patient.chair, patient.status, patient.remark || '']);
 				const csv = [headers, ...rows].map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(',')).join('\r\n');
 				const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
 				const link = document.createElement('a');

@@ -1,0 +1,19 @@
+{
+  "name": "shija-patient-records",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server.js",
+    "setup-admin": "node setup-admin.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "connect-sqlite3": "^0.9.16",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "express-session": "^1.18.2"
+  }
+}

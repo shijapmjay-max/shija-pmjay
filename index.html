@@ -78,7 +78,7 @@
 		.search-wrap svg { flex: 0 0 auto; width: 15px; height: 15px; color: #7b8881; }
 		.search-wrap input { width: 170px; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 12px; }
 		.select-wrap select { height: 37px; padding: 0 29px 0 10px; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 12px; }
-		.shift-tabs { display: flex; gap: 4px; padding: 0 20px 14px; }
+		.shift-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 20px 14px; }
 		.shift-tab { min-height: 29px; padding: 0 11px; border: 1px solid transparent; border-radius: 4px; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; }
 		.shift-tab:hover { background: #f4f7f4; }
 		.shift-tab.active { border-color: #d5e7dc; background: var(--green-soft); color: var(--green); font-weight: 700; }
@@ -210,8 +210,10 @@
 			</div>
 			<div class="shift-tabs" role="group" aria-label="Filter by shift">
 				<button class="shift-tab active" data-shift="all" type="button" aria-pressed="true">All shifts</button>
-				<button class="shift-tab" data-shift="AM" type="button" aria-pressed="false">Morning</button>
-				<button class="shift-tab" data-shift="PM" type="button" aria-pressed="false">Afternoon</button>
+				<button class="shift-tab" data-shift="Morning" type="button" aria-pressed="false">Morning</button>
+				<button class="shift-tab" data-shift="Afternoon" type="button" aria-pressed="false">Afternoon</button>
+				<button class="shift-tab" data-shift="Evening" type="button" aria-pressed="false">Evening</button>
+				<button class="shift-tab" data-shift="Night" type="button" aria-pressed="false">Night</button>
 			</div>
 			<div class="table-scroll">
 				<table>
@@ -241,7 +243,7 @@
 				<div class="field full"><label for="patient-name">Patient name</label><input id="patient-name" name="name" required maxlength="80" autocomplete="off"></div>
 				<div class="field"><label for="patient-id">Patient ID</label><input id="patient-id" name="patientId" required maxlength="24" autocomplete="off"></div>
 				<div class="field"><label for="patient-time">Appointment time</label><select id="patient-time" name="time"><option value="07:00">7am</option><option value="12:00">12pm</option><option value="17:00">5pm</option><option value="21:00">9pm</option><option value="00:00">12am</option><option value="02:00">2am</option></select></div>
-				<div class="field"><label for="patient-shift">Shift</label><select id="patient-shift" name="shift"><option value="AM">Morning</option><option value="PM">Afternoon</option></select></div>
+				<div class="field"><label for="patient-shift">Shift</label><select id="patient-shift" name="shift"><option value="Morning">Morning</option><option value="Afternoon">Afternoon</option><option value="Evening">Evening</option><option value="Night">Night</option></select></div>
 				<div class="form-actions"><button class="button" type="button" id="cancel-dialog">Cancel</button><button class="button button-primary" type="submit">Add to list</button></div>
 			</div>
 		</form>
@@ -267,18 +269,21 @@
 			const localToday = [today.getFullYear(), String(today.getMonth() + 1).padStart(2, '0'), String(today.getDate()).padStart(2, '0')].join('-');
 
 			const sampleRoster = [
-				{ id: 'sample-1', name: 'Patient 1042', patientId: '1042', time: '06:30', shift: 'AM', chair: '01', status: 'Arrived' },
-				{ id: 'sample-2', name: 'Patient 1087', patientId: '1087', time: '06:45', shift: 'AM', chair: '02', status: 'In chair' },
-				{ id: 'sample-3', name: 'Patient 1126', patientId: '1126', time: '07:00', shift: 'AM', chair: '03', status: 'Scheduled' },
-				{ id: 'sample-4', name: 'Patient 1159', patientId: '1159', time: '07:15', shift: 'AM', chair: '04', status: 'Scheduled' },
-				{ id: 'sample-5', name: 'Patient 1203', patientId: '1203', time: '12:30', shift: 'PM', chair: '01', status: 'Scheduled' },
-				{ id: 'sample-6', name: 'Patient 1248', patientId: '1248', time: '12:45', shift: 'PM', chair: '02', status: 'Scheduled' }
+				{ id: 'sample-1', name: 'Patient 1042', patientId: '1042', time: '06:30', shift: 'Morning', chair: '01', status: 'Arrived' },
+				{ id: 'sample-2', name: 'Patient 1087', patientId: '1087', time: '06:45', shift: 'Morning', chair: '02', status: 'In chair' },
+				{ id: 'sample-3', name: 'Patient 1126', patientId: '1126', time: '07:00', shift: 'Morning', chair: '03', status: 'Scheduled' },
+				{ id: 'sample-4', name: 'Patient 1159', patientId: '1159', time: '07:15', shift: 'Morning', chair: '04', status: 'Scheduled' },
+				{ id: 'sample-5', name: 'Patient 1203', patientId: '1203', time: '12:30', shift: 'Afternoon', chair: '01', status: 'Scheduled' },
+				{ id: 'sample-6', name: 'Patient 1248', patientId: '1248', time: '12:45', shift: 'Afternoon', chair: '02', status: 'Scheduled' }
 			];
 
 			function loadData() {
 				try {
 					const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
 					if (!saved[localToday]) saved[localToday] = sampleRoster;
+					Object.values(saved).forEach(roster => {
+						if (Array.isArray(roster)) roster.forEach(patient => { patient.shift = normalizeShift(patient.shift, patient.time); });
+					});
 					return saved;
 				} catch {
 					return { [localToday]: sampleRoster };
@@ -323,6 +328,22 @@
 				}
 				return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 			}
+			function shiftForTime(time) {
+				const [hours, minutes] = String(time).split(':').map(Number);
+				const totalMinutes = hours * 60 + minutes;
+				if (totalMinutes < 300 || totalMinutes >= 1260) return 'Night';
+				if (totalMinutes >= 1020) return 'Evening';
+				if (totalMinutes >= 720) return 'Afternoon';
+				return 'Morning';
+			}
+			function normalizeShift(shift, time) {
+				const value = String(shift || '').trim().toLowerCase();
+				if (value.startsWith('morning')) return 'Morning';
+				if (value.startsWith('afternoon')) return 'Afternoon';
+				if (value.startsWith('evening')) return 'Evening';
+				if (value.startsWith('night')) return 'Night';
+				return shiftForTime(time);
+			}
 			async function importExcelFile(file) {
 				if (!file) return;
 				if (!window.XLSX) {
@@ -366,8 +387,8 @@
 							return;
 						}
 						existingIds.add(idKey);
-						const shiftValue = columns.shift ? String(row[columns.shift]).trim().toLowerCase() : '';
-						const shift = /^(am|morning)/.test(shiftValue) ? 'AM' : /^(pm|afternoon)/.test(shiftValue) ? 'PM' : Number(time.slice(0, 2)) < 12 ? 'AM' : 'PM';
+						const shiftValue = columns.shift ? row[columns.shift] : '';
+						const shift = normalizeShift(shiftValue, time);
 						const statusValue = columns.status ? String(row[columns.status]).trim().toLowerCase() : '';
 						const status = statuses.find(item => item.toLowerCase() === statusValue) || 'Scheduled';
 						additions.push({ id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`, name, patientId, time, shift, chair, status });
@@ -411,7 +432,7 @@
 					const nextStatus = statuses[(statuses.indexOf(patient.status) + 1) % statuses.length];
 					return `<tr>
 						<td><div class="patient"><span class="avatar" aria-hidden="true">${escapeHtml(initials(patient.name))}</span><div><div class="patient-name">${escapeHtml(patient.name)}</div><div class="patient-id">ID ${escapeHtml(patient.patientId)}</div></div></div></td>
-						<td class="time">${escapeHtml(patient.time)}</td><td class="shift-label">${patient.shift === 'AM' ? 'Morning' : 'Afternoon'}</td><td class="chair">${escapeHtml(patient.chair)}</td>
+						<td class="time">${escapeHtml(patient.time)}</td><td class="shift-label">${escapeHtml(patient.shift)}</td><td class="chair">${escapeHtml(patient.chair)}</td>
 						<td><span class="status status-${statusClass}">${escapeHtml(patient.status)}</span></td>
 						<td><div class="row-actions"><button class="icon-button advance-button" data-id="${escapeHtml(patient.id)}" type="button" title="Change status to ${escapeHtml(nextStatus)}" aria-label="Change ${escapeHtml(patient.name)} status to ${escapeHtml(nextStatus)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"/></svg></button><button class="icon-button remove-button" data-id="${escapeHtml(patient.id)}" type="button" title="Remove from list" aria-label="Remove ${escapeHtml(patient.name)} from list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg></button></div></td>
 					</tr>`;
@@ -445,7 +466,7 @@
 			}));
 			dateInput.addEventListener('change', render);
 			document.querySelector('#patient-time').addEventListener('change', event => {
-				form.elements.shift.value = event.target.value < '12:00' ? 'AM' : 'PM';
+				form.elements.shift.value = shiftForTime(event.target.value);
 			});
 			timeFilterInput.addEventListener('change', render);
 			document.querySelector('#upload-button').addEventListener('click', () => excelInput.click());
@@ -485,7 +506,7 @@
 					id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
 					name: String(values.get('name')).trim(), patientId,
 					chair: 'Unassigned', time: String(values.get('time')),
-					shift: String(values.get('shift')), status: 'Scheduled'
+					shift: normalizeShift(values.get('shift'), values.get('time')), status: 'Scheduled'
 				}];
 				saveData();
 				form.reset();

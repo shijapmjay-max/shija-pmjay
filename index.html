@@ -137,8 +137,8 @@
 			main { width: 89vw; margin-top: 28px; }
 			.page-heading { align-items: start; flex-direction: column; gap: 16px; }
 			h1 { font-size: 30px; }
-			.heading-actions { width: 100%; }
-			.date-control { flex: 1; }
+			.heading-actions { width: 100%; flex-wrap: wrap; }
+			.date-control { flex: 1; min-width: 130px; }
 			.metrics { grid-template-columns: repeat(2, 1fr); }
 			.metric { min-height: 82px; padding: 12px 14px; }
 			.metric-value { font-size: 22px; }
@@ -174,6 +174,11 @@
 			</div>
 			<div class="heading-actions">
 				<input class="date-control" id="list-date" type="date" aria-label="Roster date">
+				<input id="excel-input" type="file" accept=".xlsx,.xls" hidden>
+				<button class="button" id="upload-button" type="button" title="Required columns: Patient Name, Patient ID, Time, Chair">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4 4 4M5 14v5h14v-5"/></svg>
+					Upload Excel
+				</button>
 				<button class="button" id="export-button" type="button" title="Export this day's roster as CSV">
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v4h14v-4"/></svg>
 					Export CSV
@@ -239,9 +244,11 @@
 	</dialog>
 	<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+	<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 	<script>
 		(() => {
 			const dateInput = document.querySelector('#list-date');
+			const excelInput = document.querySelector('#excel-input');
 			const rosterBody = document.querySelector('#roster-body');
 			const dialog = document.querySelector('#patient-dialog');
 			const form = document.querySelector('#patient-form');
@@ -289,6 +296,90 @@
 			}
 			function initials(name) {
 				return name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase();
+			}
+			function normalizeTime(value) {
+				const text = String(value).trim();
+				if (!text) return null;
+				if (/^\d+(\.\d+)?$/.test(text)) {
+					const serial = Number(text);
+					if (serial >= 0 && serial < 1) {
+						const minutes = Math.round(serial * 1440) % 1440;
+						return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+					}
+				}
+				const match = text.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i);
+				if (!match) return null;
+				let hours = Number(match[1]);
+				const minutes = Number(match[2]);
+				if (minutes > 59 || hours > 23) return null;
+				if (match[3]) {
+					if (hours < 1 || hours > 12) return null;
+					hours = hours % 12 + (match[3].toUpperCase() === 'PM' ? 12 : 0);
+				}
+				return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+			}
+			async function importExcelFile(file) {
+				if (!file) return;
+				if (!window.XLSX) {
+					showToast('Excel reader did not load. Check your internet connection.');
+					return;
+				}
+				try {
+					const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+					const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+					const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: '', raw: false });
+					if (!rows.length) throw new Error('The first worksheet is empty.');
+					const headers = Object.keys(rows[0]);
+					const findColumn = aliases => headers.find(header => aliases.includes(header.toLowerCase().replace(/[^a-z0-9]/g, '')));
+					const columns = {
+						name: findColumn(['patientname', 'name', 'patient']),
+						patientId: findColumn(['patientid', 'id', 'uhid', 'mrn']),
+						time: findColumn(['time', 'appointmenttime', 'sessiontime', 'starttime']),
+						chair: findColumn(['chair', 'chairno', 'station', 'stationno', 'machine']),
+						shift: findColumn(['shift', 'period']),
+						status: findColumn(['status', 'sessionstatus'])
+					};
+					if (!columns.name || !columns.patientId || !columns.time || !columns.chair) {
+						throw new Error('Required columns: Patient Name, Patient ID, Time, Chair.');
+					}
+					const roster = getRoster();
+					const existingIds = new Set(roster.map(patient => patient.patientId.toLowerCase()));
+					const additions = [];
+					let skipped = 0;
+					rows.forEach(row => {
+						const name = String(row[columns.name]).trim();
+						const patientId = String(row[columns.patientId]).trim();
+						const chair = String(row[columns.chair]).trim();
+						const time = normalizeTime(row[columns.time]);
+						if (!name || !patientId || !chair || !time) {
+							skipped++;
+							return;
+						}
+						const idKey = patientId.toLowerCase();
+						if (existingIds.has(idKey)) {
+							skipped++;
+							return;
+						}
+						existingIds.add(idKey);
+						const shiftValue = columns.shift ? String(row[columns.shift]).trim().toLowerCase() : '';
+						const shift = /^(am|morning)/.test(shiftValue) ? 'AM' : /^(pm|afternoon)/.test(shiftValue) ? 'PM' : Number(time.slice(0, 2)) < 12 ? 'AM' : 'PM';
+						const statusValue = columns.status ? String(row[columns.status]).trim().toLowerCase() : '';
+						const status = statuses.find(item => item.toLowerCase() === statusValue) || 'Scheduled';
+						additions.push({ id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`, name, patientId, time, shift, chair, status });
+					});
+					if (!additions.length) {
+						showToast(`No new rows imported. ${skipped} row(s) skipped.`);
+						return;
+					}
+					rosterByDate[dateInput.value] = [...roster, ...additions];
+					saveData();
+					render();
+					showToast(`Imported ${additions.length} patient(s); skipped ${skipped} row(s).`);
+				} catch (error) {
+					showToast(error.message || 'Could not read this Excel file.');
+				} finally {
+					excelInput.value = '';
+				}
 			}
 			function render() {
 				const roster = getRoster();
@@ -348,6 +439,8 @@
 				render();
 			}));
 			dateInput.addEventListener('change', render);
+			document.querySelector('#upload-button').addEventListener('click', () => excelInput.click());
+			excelInput.addEventListener('change', event => importExcelFile(event.target.files[0]));
 			searchInput.addEventListener('input', render);
 			statusFilter.addEventListener('change', render);
 			rosterBody.addEventListener('click', event => {

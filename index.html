@@ -43,17 +43,7 @@
 			background: rgb(255 255 255 / 80%);
 		}
 		.brand { display: flex; align-items: center; gap: 11px; }
-		.brand-mark {
-			width: 32px;
-			height: 32px;
-			display: grid;
-			place-items: center;
-			border-radius: 9px;
-			background: var(--green);
-			color: white;
-			font: 700 17px/1 Georgia, serif;
-		}
-		.brand-name { font-weight: 700; letter-spacing: .01em; }
+		.brand-logo { display: block; width: 255px; height: auto; }
 		.brand-unit { margin-left: 12px; color: var(--muted); font-size: 12px; }
 		.topbar-meta { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; }
 		.live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4d9b72; }
@@ -142,7 +132,8 @@
 
 		@media (max-width: 760px) {
 			.topbar { height: 58px; padding: 0 5.5vw; }
-			.brand-unit, .topbar-meta span:last-child { display: none; }
+			.brand-logo { width: 185px; }
+			.topbar-meta span:last-child { display: none; }
 			main { width: 89vw; margin-top: 28px; }
 			.page-heading { align-items: start; flex-direction: column; gap: 16px; }
 			h1 { font-size: 30px; }
@@ -169,9 +160,7 @@
 <body>
 	<header class="topbar">
 		<div class="brand">
-			<span class="brand-mark" aria-hidden="true">S</span>
-			<span class="brand-name">Shija Dialysis</span>
-			<span class="brand-unit">Unit operations</span>
+			<img class="brand-logo" src="shija-logo.png" alt="Shija Hospitals &amp; Research Institute Pvt. Ltd.">
 		</div>
 		<div class="topbar-meta"><span class="live-dot" aria-hidden="true"></span><span>Daily roster</span><span>Local view</span></div>
 	</header>

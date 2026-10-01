@@ -61,13 +61,12 @@
 		.button-primary { border-color: var(--green); background: var(--green); color: white; }
 		.button-primary:hover { background: #185740; }
 		.button svg { width: 16px; height: 16px; }
-		.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: var(--line); box-shadow: var(--shadow); }
+		.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: var(--line); box-shadow: var(--shadow); }
 		.metric { min-height: 97px; padding: 17px 20px; background: var(--surface); }
 		.metric-top { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 12px; }
 		.metric-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
 		.metric:nth-child(2) .metric-dot { background: #d19a1d; }
-		.metric:nth-child(3) .metric-dot { background: #3c8a69; }
-		.metric:nth-child(4) .metric-dot { background: #87928c; }
+		.metric:nth-child(3) .metric-dot { background: #87928c; }
 		.metric-value { display: block; margin-top: 7px; font: 400 25px/1 Georgia, serif; }
 		.metric-value small { color: var(--muted); font: 12px/1 "Aptos", "Segoe UI", sans-serif; }
 		.roster { margin-top: 28px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); box-shadow: var(--shadow); }
@@ -195,7 +194,6 @@
 		<section class="metrics" aria-label="Roster summary">
 			<div class="metric"><div class="metric-top">Scheduled <span class="metric-dot"></span></div><strong class="metric-value" id="total-count">0 <small>patients</small></strong></div>
 			<div class="metric"><div class="metric-top">Expected <span class="metric-dot"></span></div><strong class="metric-value" id="expected-count">0 <small>remaining</small></strong></div>
-			<div class="metric"><div class="metric-top">In treatment <span class="metric-dot"></span></div><strong class="metric-value" id="treatment-count">0 <small>on chairs</small></strong></div>
 			<div class="metric"><div class="metric-top">Completed <span class="metric-dot"></span></div><strong class="metric-value" id="completed-count">0 <small>sessions</small></strong></div>
 		</section>
 
@@ -400,7 +398,6 @@
 				const arriving = roster.filter(patient => ['Scheduled', 'Arrived'].includes(patient.status)).length;
 				document.querySelector('#total-count').innerHTML = `${roster.length} <small>patients</small>`;
 				document.querySelector('#expected-count').innerHTML = `${arriving} <small>remaining</small>`;
-				document.querySelector('#treatment-count').innerHTML = `${roster.filter(patient => patient.status === 'In treatment').length} <small>on chairs</small>`;
 				document.querySelector('#completed-count').innerHTML = `${roster.filter(patient => patient.status === 'Completed').length} <small>sessions</small>`;
 				document.querySelector('#visible-count').textContent = `${visible.length} shown`;
 				document.querySelector('#roster-foot-count').textContent = `${visible.length} of ${roster.length} patients`;

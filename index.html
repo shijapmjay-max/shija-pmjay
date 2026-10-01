@@ -169,7 +169,7 @@
 		<div class="brand">
 			<img class="brand-logo" src="shija-logo.png" alt="Shija Hospitals &amp; Research Institute Pvt. Ltd.">
 		</div>
-		<div class="topbar-meta"><span class="live-dot" aria-hidden="true"></span><span>Daily roster</span><button class="button" id="logout-button" type="button">Log out</button></div>
+		<div class="topbar-meta"><span class="live-dot" aria-hidden="true"></span><span>Daily roster</span></div>
 	</header>
 
 	<main>
@@ -465,10 +465,6 @@
 			document.querySelector('#upload-button').addEventListener('click', () => excelInput.click());
 			excelInput.addEventListener('change', event => importExcelFile(event.target.files[0]));
 			searchInput.addEventListener('input', render);
-			document.querySelector('#logout-button').addEventListener('click', async () => {
-				await fetch('/api/logout', { method: 'POST' });
-				window.location.assign('/login');
-			});
 			rosterBody.addEventListener('change', event => {
 				const remarkInput = event.target.closest('.remark-input');
 				if (!remarkInput) return;

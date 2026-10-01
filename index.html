@@ -102,7 +102,7 @@
 		.status::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ""; }
 		.status-scheduled { background: var(--slate-soft); color: #5d6b63; }
 		.status-arrived { background: var(--gold-soft); color: var(--gold); }
-		.status-in-treatment { background: var(--green-soft); color: var(--green); }
+		.status-in-chair { background: var(--green-soft); color: var(--green); }
 		.status-completed { background: #edf0f5; color: #606f82; }
 		.status-cancelled { background: var(--coral-soft); color: var(--coral); }
 		.row-actions { display: flex; justify-content: end; gap: 6px; }
@@ -205,7 +205,7 @@
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
 						<input id="search-input" type="search" placeholder="Search name or ID" aria-label="Search patients by name or ID">
 					</label>
-					<label class="select-wrap"><select id="status-filter" aria-label="Filter by status"><option value="all">All status</option><option value="Scheduled">Scheduled</option><option value="Arrived">Arrived</option><option value="In treatment">In treatment</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></select></label>
+					<label class="select-wrap"><select id="status-filter" aria-label="Filter by status"><option value="all">All status</option><option value="Scheduled">Scheduled</option><option value="Arrived">Arrived</option><option value="In chair">In chair</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></select></label>
 				</div>
 			</div>
 			<div class="shift-tabs" role="group" aria-label="Filter by shift">
@@ -261,7 +261,7 @@
 			const searchInput = document.querySelector('#search-input');
 			const statusFilter = document.querySelector('#status-filter');
 			const storageKey = 'shija-daily-roster-v1';
-			const statuses = ['Scheduled', 'Arrived', 'In treatment', 'Completed', 'Cancelled'];
+			const statuses = ['Scheduled', 'Arrived', 'In chair', 'Completed', 'Cancelled'];
 			let activeShift = 'all';
 			let toastTimer;
 			const today = new Date();
@@ -269,7 +269,7 @@
 
 			const sampleRoster = [
 				{ id: 'sample-1', name: 'Patient 1042', patientId: '1042', time: '06:30', shift: 'AM', chair: '01', status: 'Arrived' },
-				{ id: 'sample-2', name: 'Patient 1087', patientId: '1087', time: '06:45', shift: 'AM', chair: '02', status: 'In treatment' },
+				{ id: 'sample-2', name: 'Patient 1087', patientId: '1087', time: '06:45', shift: 'AM', chair: '02', status: 'In chair' },
 				{ id: 'sample-3', name: 'Patient 1126', patientId: '1126', time: '07:00', shift: 'AM', chair: '03', status: 'Scheduled' },
 				{ id: 'sample-4', name: 'Patient 1159', patientId: '1159', time: '07:15', shift: 'AM', chair: '04', status: 'Scheduled' },
 				{ id: 'sample-5', name: 'Patient 1203', patientId: '1203', time: '12:30', shift: 'PM', chair: '01', status: 'Scheduled' },

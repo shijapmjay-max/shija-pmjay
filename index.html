@@ -240,8 +240,7 @@
 			<div class="dialog-body">
 				<div class="field full"><label for="patient-name">Patient name</label><input id="patient-name" name="name" required maxlength="80" autocomplete="off"></div>
 				<div class="field"><label for="patient-id">Patient ID</label><input id="patient-id" name="patientId" required maxlength="24" autocomplete="off"></div>
-				<div class="field"><label for="patient-chair">Chair</label><input id="patient-chair" name="chair" placeholder="e.g. 04" required maxlength="12"></div>
-				<div class="field"><label for="patient-time">Appointment time</label><input id="patient-time" name="time" type="time" required></div>
+				<div class="field"><label for="patient-time">Appointment time</label><select id="patient-time" name="time"><option value="07:00">7am</option><option value="12:00">12pm</option><option value="17:00">5pm</option><option value="21:00">9pm</option><option value="00:00">12am</option><option value="02:00">2am</option></select></div>
 				<div class="field"><label for="patient-shift">Shift</label><select id="patient-shift" name="shift"><option value="AM">Morning</option><option value="PM">Afternoon</option></select></div>
 				<div class="form-actions"><button class="button" type="button" id="cancel-dialog">Cancel</button><button class="button button-primary" type="submit">Add to list</button></div>
 			</div>
@@ -445,6 +444,9 @@
 				render();
 			}));
 			dateInput.addEventListener('change', render);
+			document.querySelector('#patient-time').addEventListener('change', event => {
+				form.elements.shift.value = event.target.value < '12:00' ? 'AM' : 'PM';
+			});
 			timeFilterInput.addEventListener('change', render);
 			document.querySelector('#upload-button').addEventListener('click', () => excelInput.click());
 			excelInput.addEventListener('change', event => importExcelFile(event.target.files[0]));
@@ -482,7 +484,7 @@
 				rosterByDate[dateInput.value] = [...roster, {
 					id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
 					name: String(values.get('name')).trim(), patientId,
-					chair: String(values.get('chair')).trim(), time: String(values.get('time')),
+					chair: 'Unassigned', time: String(values.get('time')),
 					shift: String(values.get('shift')), status: 'Scheduled'
 				}];
 				saveData();

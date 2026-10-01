@@ -113,6 +113,9 @@
 		.empty { padding: 44px 20px; color: var(--muted); text-align: center; }
 		.empty strong { display: block; margin-bottom: 5px; color: var(--ink); font: 400 19px Georgia, serif; }
 		.roster-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+		.time-filter { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+		.time-filter label { display: flex; align-items: center; gap: 5px; }
+		.time-filter input { width: 100px; height: 30px; padding: 0 6px; border: 1px solid var(--line); border-radius: 4px; background: white; color: var(--ink); font-size: 11px; }
 		.privacy-note { display: flex; align-items: center; gap: 6px; }
 		.privacy-note svg { width: 13px; height: 13px; }
 		dialog { width: min(440px, calc(100vw - 28px)); padding: 0; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); box-shadow: 0 24px 80px rgb(20 38 30 / 22%); }
@@ -221,6 +224,12 @@
 			</div>
 			<div class="roster-foot">
 				<span id="roster-foot-count">0 patients</span>
+					<div class="time-filter" aria-label="Filter appointments by time">
+						<span>Time</span>
+						<label for="time-from">From <input id="time-from" type="time"></label>
+						<label for="time-to">To <input id="time-to" type="time"></label>
+						<button class="icon-button" id="clear-time-filter" type="button" title="Clear time filter" aria-label="Clear time filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M9 7V4h6v3m-9 0 1 14h10l1-14"/></svg></button>
+					</div>
 				<span class="privacy-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></svg>Demo only. Do not enter real patient information.</span>
 			</div>
 		</section>
@@ -249,6 +258,8 @@
 		(() => {
 			const dateInput = document.querySelector('#list-date');
 			const excelInput = document.querySelector('#excel-input');
+			const timeFromInput = document.querySelector('#time-from');
+			const timeToInput = document.querySelector('#time-to');
 			const rosterBody = document.querySelector('#roster-body');
 			const dialog = document.querySelector('#patient-dialog');
 			const form = document.querySelector('#patient-form');
@@ -386,7 +397,8 @@
 				const visible = roster.filter(patient => {
 					const query = searchInput.value.trim().toLowerCase();
 					const matchesQuery = !query || `${patient.name} ${patient.patientId}`.toLowerCase().includes(query);
-					return matchesQuery && (activeShift === 'all' || patient.shift === activeShift) && (statusFilter.value === 'all' || patient.status === statusFilter.value);
+					const matchesTime = (!timeFromInput.value || patient.time >= timeFromInput.value) && (!timeToInput.value || patient.time <= timeToInput.value);
+					return matchesQuery && matchesTime && (activeShift === 'all' || patient.shift === activeShift) && (statusFilter.value === 'all' || patient.status === statusFilter.value);
 				}).sort((first, second) => first.time.localeCompare(second.time));
 				const arriving = roster.filter(patient => ['Scheduled', 'Arrived'].includes(patient.status)).length;
 				document.querySelector('#total-count').innerHTML = `${roster.length} <small>patients</small>`;
@@ -397,7 +409,7 @@
 				document.querySelector('#roster-foot-count').textContent = `${visible.length} of ${roster.length} patients`;
 
 				if (!visible.length) {
-					const hasFilter = searchInput.value || activeShift !== 'all' || statusFilter.value !== 'all';
+					const hasFilter = searchInput.value || timeFromInput.value || timeToInput.value || activeShift !== 'all' || statusFilter.value !== 'all';
 					rosterBody.innerHTML = `<tr><td colspan="6"><div class="empty"><strong>${hasFilter ? 'No matching patients' : 'No patients on this date'}</strong>${hasFilter ? 'Try changing the search or filters.' : 'Add a patient to start this daily list.'}</div></td></tr>`;
 					return;
 				}
@@ -439,6 +451,13 @@
 				render();
 			}));
 			dateInput.addEventListener('change', render);
+			timeFromInput.addEventListener('input', render);
+			timeToInput.addEventListener('input', render);
+			document.querySelector('#clear-time-filter').addEventListener('click', () => {
+				timeFromInput.value = '';
+				timeToInput.value = '';
+				render();
+			});
 			document.querySelector('#upload-button').addEventListener('click', () => excelInput.click());
 			excelInput.addEventListener('change', event => importExcelFile(event.target.files[0]));
 			searchInput.addEventListener('input', render);
